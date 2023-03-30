@@ -131,7 +131,7 @@ const Toast: FC<ToastProps> = (props) => {
     icon,
     type = "normal",
     message,
-    duration = 5000,
+    duration = null,
     style,
     textStyle,
     animationDuration = 250,
@@ -155,6 +155,7 @@ const Toast: FC<ToastProps> = (props) => {
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const dims = useDimensions();
 
+  // Open/close animation by duration={}, closes and removes from the stack
   useEffect(() => {
     Animated.timing(animation, {
       toValue: 1,
