@@ -134,7 +134,7 @@ const Toast: FC<ToastProps> = (props) => {
     duration = null,
     style,
     textStyle,
-    animationDuration = 250,
+    animationDuration = 500,
     animationType = "slide-in",
     successIcon,
     dangerIcon,
@@ -345,7 +345,7 @@ const Toast: FC<ToastProps> = (props) => {
 };
 
 const styles = StyleSheet.create({
-  container: { width: "100%", alignItems: "center" },
+  container: { alignItems: "center", overflow: 'visible', alignSelf: 'center' },
   toastContainer: {
     paddingHorizontal: 12,
     paddingVertical: 12,
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     marginVertical: 5,
     flexDirection: "row",
     alignItems: "center",
-    overflow: "hidden",
+    overflow: "visible",
   },
   message: {
     color: "#fff",

@@ -6,7 +6,8 @@ import {
   Platform,
   Dimensions,
   View,
-  Pressable
+  Pressable,
+  ScrollView
 } from "react-native";
 import Toast, { ToastOptions, ToastProps } from "./toast";
 
@@ -24,19 +25,34 @@ export interface Props extends ToastOptions {
 }
 
 interface State {
-  toasts: Array<ToastProps>;
-  toastsHistory: Array<ToastProps>;
-  unfolded: boolean;
+	foldedToast: ToastProps;
+	toastsHistory: Array<ToastProps>;
+	unfolded: boolean;
+	unfoldedWidth: number;
 }
 
 class ToastContainer extends Component<Props, State> {
   constructor(props: Props) {
 	super(props);
 	this.state = {
-	  toasts: [],
-	  toastsHistory: [],
-	  unfolded: false,
+		foldedToast: this.dummyToast,
+		toastsHistory: [],
+		unfolded: false,
+		unfoldedWidth: 0
 	};
+  }
+  componentDidUpdate() {
+	if (this.state.foldedToast === this.dummyToast && this.state.toastsHistory.length === 0) {
+		if(this.state.unfolded) this.setState({ unfolded: false });
+	}
+  }
+  
+  dummyToast = {
+	id: 'dummy',
+	onDestroy: () => {},
+	message: '',
+	open: false,
+	onHide: () => {}
   }
 
   static defaultProps: Props = {
@@ -50,53 +66,44 @@ class ToastContainer extends Component<Props, State> {
   show = (message: string | JSX.Element, toastOptions?: ToastOptions) => {
 	let id = toastOptions?.id || Math.random().toString();
 	const onDestroy = () => {
-	  toastOptions?.onClose && toastOptions?.onClose();
-	  this.setState({ toasts: this.state.toasts.filter((t) => t.id !== id), toastsHistory: this.state.toastsHistory.filter((t) => t.id !== id) });
+		toastOptions?.onClose && toastOptions?.onClose();
+		if(this.state.foldedToast.id === id) return this.setState({ foldedToast: this.dummyToast})
+		this.setState({ toastsHistory: this.state.toastsHistory.filter((t) => t.id !== id) });
 	};
 
-	requestAnimationFrame(() => {
-		this.setState({
-		toasts: [
-			{
-			id,
-			onDestroy,
-			message,
-			open: true,
-			onPress: () => this.renderUnfolded(),
-			onHide: () => this.hide(id),
-			...this.props,
-			...toastOptions,
-			},
-			...this.state.toasts.filter((t) => t.open),
-		],
-		});
-		if(this.state.toasts.length == 2) {
-			this.setState({
-				toastsHistory: [
-					{...this.state.toasts[1]},
-					...this.state.toastsHistory
-				],
-				toasts: [this.state.toasts[0]]
-			})
-		}
-		console.log(`Toasts: ${JSON.stringify(this.state.toasts)}`);
-		console.log(`Toasts History: ${JSON.stringify(this.state.toastsHistory)}`);
-		console.log(`Unfolded: ${this.state.unfolded})}`);
-	});
+	const newToast: ToastProps = {
+		id,
+		onDestroy,
+		message,
+		open: true,
+		onHide: () => this.hide(id),
+		...this.props,
+		...toastOptions,
+	}
 
-	// if(this.state.toasts.some((t) => t.open === true)) {
-	// 	this.setState({
-	// 		toastsHistory: this.state.toasts.filter((t) => t.open === true),
-	// 		toasts: this.state.toasts.filter((t, index) => t.open !== true)
-	// 	})
-	// }
+	requestAnimationFrame(() => {
+		if(this.state.foldedToast === this.dummyToast) this.setState({ foldedToast: newToast }); 
+		else {
+			this.setState(
+				{
+					toastsHistory: [
+						this.state.foldedToast,
+						...this.state.toastsHistory
+					],
+					foldedToast: newToast
+				}
+			)
+		}
+	});
 	return id;
   };
+
   renderUnfolded = () => {
 	this.setState({
 		unfolded: !this.state.unfolded
 	})
   }
+
   /**
    * Updates a toast, To use this create you must pass an id to show method first, then pass it here to update the toast.
    */
@@ -105,25 +112,16 @@ class ToastContainer extends Component<Props, State> {
 	message: string | JSX.Element,
 	toastOptions?: ToastOptions
   ) => {
-	this.setState({
-	  toasts: this.state.toasts.map((toast) =>
-		toast.id === id ? { ...toast, message, ...toastOptions } : toast
-	  ),
-	});
+	if(this.state.foldedToast.id === id) this.setState({ foldedToast: {...this.state.foldedToast, message, ...toastOptions} })
+	else this.setState({ toastsHistory: this.state.toastsHistory.map((t) => t.id === id ? {...t, message, ...toastOptions} : t) });
   };
 
   /**
    * Removes a toast from stack
    */
   hide = (id: string) => {
-	this.setState({
-	  toasts: this.state.toasts.map((t) =>
-		t.id === id ? { ...t, open: false } : t
-	  ),
-	  toastsHistory: this.state.toastsHistory.map((t) =>
-	  t.id === id ? { ...t, open: false } : t
-	)
-	});
+	if(this.state.foldedToast.id === id) return this.setState({ foldedToast: {...this.state.foldedToast, open: false}})
+	this.setState({ toastsHistory: this.state.toastsHistory.map((t) => t.id === id ? { ...t, open: false } : t) });
   };
 
   /**
@@ -131,9 +129,9 @@ class ToastContainer extends Component<Props, State> {
    */
   hideAll = () => {
 	this.setState({
-	  toasts: [],
-	  toastsHistory: [],
-	  unfolded: this.state.unfolded ? !this.state.unfolded : this.state.unfolded
+		foldedToast: this.dummyToast,
+		toastsHistory: [],
+		unfolded: this.state.unfolded ? !this.state.unfolded : this.state.unfolded,
 	});
   };
 
@@ -141,11 +139,12 @@ class ToastContainer extends Component<Props, State> {
    * Check if a toast is currently open
    */
   isOpen = (id: string) => {
-	return this.state.toasts.some((t) => t.id === id && t.open);
+	if(this.state.foldedToast.id === id && this.state.foldedToast.open) return true;
+	else return this.state.toastsHistory.some((t) => t.id === id && t.open);
   }
 
   renderBottomToasts() {
-    const { toasts, toastsHistory } = this.state;
+    const { foldedToast, toastsHistory } = this.state;
     let { offset, offsetBottom } = this.props;
     let style: ViewStyle = {
       bottom: offsetBottom || offset,
@@ -154,41 +153,41 @@ class ToastContainer extends Component<Props, State> {
       flexDirection: "column",
     };
 
-	if(toastsHistory.length > 0 && toasts.length > 0) {
+	if (foldedToast !== this.dummyToast || toastsHistory.length > 0) {
+		const toast = foldedToast !== this.dummyToast ? foldedToast : toastsHistory.length > 0 ? toastsHistory[0] : this.dummyToast;
+		const onPress = toastsHistory.length > 0 ? () => this.renderUnfolded() : undefined;
+		const type = toastsHistory.length > 0 ? 'multiple' : undefined;
+	  
 		return (
-			<KeyboardAvoidingView
-				behavior={Platform.OS === "ios" ? "position" : undefined}
-				pointerEvents="box-none"
-				style={[styles.container, style]}
-			>
-				<Toast key={toasts[0].id} {...toasts[0]} type='multiple' />
-			</KeyboardAvoidingView>
-		)
-	}	
-	else if (toasts.length > 0) return (
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "position" : undefined}
-        style={[styles.container, style]}
-        pointerEvents="box-none"
-      >
-        <Toast key={toasts[0].id} {...toasts[0]} />
-      </KeyboardAvoidingView>
-    );
-	else return null;
+		  <KeyboardAvoidingView
+			behavior={Platform.OS === "ios" ? "position" : undefined}
+			pointerEvents="box-none"
+			style={[styles.container, style]}
+		  >
+			<Toast key={toast.id} {...toast} onPress={onPress} type={type} />
+		  </KeyboardAvoidingView>
+		);
+	  } else return null;
+	
   }
 
   unfoldedView = () => {
-	let totalToasts: boolean = (this.state.toasts.length + this.state.toastsHistory.length) > 0;
-	{return totalToasts ? <KeyboardAvoidingView style={unfoldedStyling.container}>
-			<View style={unfoldedStyling.restrict}>
+	let calculatedCenter = width * 0.5 - this.state.unfoldedWidth * 0.5;
+	let styleCentered: ViewStyle = { left: calculatedCenter }
+	let shouldRender = this.state.foldedToast !== this.dummyToast || this.state.toastsHistory.length > 0;
+	return shouldRender && <KeyboardAvoidingView style={[unfoldedStyling.container, styleCentered]} onLayout={event => {
+				const { width } = event.nativeEvent.layout
+				this.setState({ unfoldedWidth: width });
+			}}>	
 				<View style={unfoldedStyling.buttons}>
 					<Pressable onPress={() => this.renderUnfolded()} style={[unfoldedStyling.icons, unfoldedStyling.foldIcon]}>{this.props.foldIcon}</Pressable>
 					<Pressable onPress={() => this.hideAll()} style={unfoldedStyling.icons}>{this.props.clearIcon}</Pressable>
 				</View>
-				{this.state.toasts.length > 0 && <Toast key={this.state.toasts[0].id} {...this.state.toasts[0]} />}
-				{this.state.toastsHistory.length > 0 && this.state.toastsHistory.map((t) => <Toast key={t.id} {...t} />)}
-			</View>
-		</KeyboardAvoidingView> : null}
+				<ScrollView contentContainerStyle={unfoldedStyling.scroll} style={styles.ovf}>
+					{this.state.foldedToast != this.dummyToast && <Toast key={this.state.foldedToast.id} {...this.state.foldedToast} type='closeable' />}
+					{this.state.toastsHistory.length > 0 && this.state.toastsHistory.map((t) => <Toast key={t.id} {...t} type='closeable' />)}
+				</ScrollView>
+			</KeyboardAvoidingView>
   }
 
   render() {
@@ -208,36 +207,46 @@ const styles = StyleSheet.create({
 	elevation: 999999,
 	flexDirection: 'column',
 	padding: 10,
-	...(Platform.OS === "web" ? { overflow: "hidden" } : null),
   },
+
   message: {
 	color: "white",
   },
+
   fake: {
 	position: 'absolute',
 	width: '90%',
 	height: 5,
 	borderBottomEndRadius: 10
+  },
+  ovf: {
+	// @ts-expect-error
+	overflowX: 'visible'
   }
 });
 
 const unfoldedStyling = StyleSheet.create({
 	container: {
+		flex: 0,
+		zIndex: 999999,
+		maxHeight: "50%",
 		position: 'absolute',
 		flexDirection: 'column',
-		minHeight: '30%',
-		width: '100%',
-		justifyContent: 'flex-start',
-		alignItems: 'center',
-		bottom: 40
+		bottom: 65,
 	},
-	restrict: {
-		maxWidth: '50%'
+	scroll: {
+		position: 'relative',
+		paddingTop: 10,
+		flexDirection: 'column',
+		justifyContent: 'space-evenly',
+		alignItems: 'center',
+		minWidth: '1%',
+		overflowX: 'visible',
+		overflowY: 'auto'
 	},
 	buttons: {
 		flexDirection: 'row',
 		alignSelf: 'flex-end',
-		marginBottom: 10
 	},
 	icons: {
 		padding: 10,
