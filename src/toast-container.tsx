@@ -4,14 +4,11 @@ import {
   ViewStyle,
   KeyboardAvoidingView,
   Platform,
-  Dimensions,
   View,
   Pressable,
   ScrollView
 } from "react-native";
 import Toast, { ToastOptions, ToastProps } from "./toast";
-
-const { width } = Dimensions.get("window");
 
 export interface Props extends ToastOptions {
   renderToast?(toast: ToastProps): JSX.Element;
@@ -41,7 +38,8 @@ class ToastContainer extends Component<Props, State> {
 		unfoldedWidth: 0
 	};
   }
-  componentDidUpdate() {
+
+  componentDidUpdate(): void {
 	if (this.state.foldedToast === this.dummyToast && this.state.toastsHistory.length === 0) {
 		if(this.state.unfolded) this.setState({ unfolded: false });
 	}
@@ -122,6 +120,7 @@ class ToastContainer extends Component<Props, State> {
   hide = (id: string) => {
 	if(this.state.foldedToast.id === id) return this.setState({ foldedToast: {...this.state.foldedToast, open: false}})
 	this.setState({ toastsHistory: this.state.toastsHistory.map((t) => t.id === id ? { ...t, open: false } : t) });
+	this.forceUpdate();
   };
 
   /**
@@ -129,9 +128,9 @@ class ToastContainer extends Component<Props, State> {
    */
   hideAll = () => {
 	this.setState({
-		foldedToast: this.dummyToast,
-		toastsHistory: [],
-		unfolded: this.state.unfolded ? !this.state.unfolded : this.state.unfolded,
+		foldedToast: {...this.state.foldedToast, open: false},
+		toastsHistory: this.state.toastsHistory.map((t) => ({ ...t, open: false })),
+		unfolded: false
 	});
   };
 
@@ -148,15 +147,14 @@ class ToastContainer extends Component<Props, State> {
     let { offset, offsetBottom } = this.props;
     let style: ViewStyle = {
       bottom: offsetBottom || offset,
-      width: width,
       justifyContent: "flex-end",
       flexDirection: "column",
     };
 
 	if (foldedToast !== this.dummyToast || toastsHistory.length > 0) {
 		const toast = foldedToast !== this.dummyToast ? foldedToast : toastsHistory.length > 0 ? toastsHistory[0] : this.dummyToast;
-		const onPress = toastsHistory.length > 0 ? () => this.renderUnfolded() : undefined;
-		const type = toastsHistory.length > 0 ? 'multiple' : undefined;
+		const onPress = toastsHistory.length > 0 && foldedToast !== this.dummyToast ? () => this.renderUnfolded() : undefined;
+		const type = toastsHistory.length > 0 && foldedToast !== this.dummyToast ? 'multiple' : undefined;
 	  
 		return (
 		  <KeyboardAvoidingView
@@ -172,22 +170,20 @@ class ToastContainer extends Component<Props, State> {
   }
 
   unfoldedView = () => {
-	let calculatedCenter = width * 0.5 - this.state.unfoldedWidth * 0.5;
-	let styleCentered: ViewStyle = { left: calculatedCenter }
 	let shouldRender = this.state.foldedToast !== this.dummyToast || this.state.toastsHistory.length > 0;
-	return shouldRender && <KeyboardAvoidingView style={[unfoldedStyling.container, styleCentered]} onLayout={event => {
-				const { width } = event.nativeEvent.layout
-				this.setState({ unfoldedWidth: width });
-			}}>	
-				<View style={unfoldedStyling.buttons}>
-					<Pressable onPress={() => this.renderUnfolded()} style={[unfoldedStyling.icons, unfoldedStyling.foldIcon]}>{this.props.foldIcon}</Pressable>
-					<Pressable onPress={() => this.hideAll()} style={unfoldedStyling.icons}>{this.props.clearIcon}</Pressable>
-				</View>
-				<ScrollView contentContainerStyle={unfoldedStyling.scroll} style={styles.ovf}>
-					{this.state.foldedToast != this.dummyToast && <Toast key={this.state.foldedToast.id} {...this.state.foldedToast} type='closeable' />}
-					{this.state.toastsHistory.length > 0 && this.state.toastsHistory.map((t) => <Toast key={t.id} {...t} type='closeable' />)}
-				</ScrollView>
-			</KeyboardAvoidingView>
+	return shouldRender && 
+	<KeyboardAvoidingView 
+		style={unfoldedStyling.container}
+	>	
+			<View style={unfoldedStyling.buttons}>
+				<Pressable onPress={() => this.renderUnfolded()}>{this.props.foldIcon}</Pressable>
+				<Pressable onPress={() => this.hideAll()}>{this.props.clearIcon}</Pressable>
+			</View>
+			<ScrollView contentContainerStyle={unfoldedStyling.scroll} style={unfoldedStyling.scrollContainer}>
+				{this.state.foldedToast != this.dummyToast && <Toast key={this.state.foldedToast.id} {...this.state.foldedToast} type='closeable' />}
+				{this.state.toastsHistory.length > 0 && this.state.toastsHistory.map((t) => <Toast key={t.id} {...t} type='closeable' />)}
+			</ScrollView>
+	</KeyboardAvoidingView>
   }
 
   render() {
@@ -206,7 +202,15 @@ const styles = StyleSheet.create({
 	zIndex: 999999,
 	elevation: 999999,
 	flexDirection: 'column',
+	width: '100%',
+	maxWidth: 360,
+	maxHeight: 90,
+	minHeight: 74,
+	minWidth: 358,
 	padding: 10,
+	left: '50%',
+	//@ts-expect-error
+	transform: [{translateX: '-50%'}],
   },
 
   message: {
@@ -217,11 +221,8 @@ const styles = StyleSheet.create({
 	position: 'absolute',
 	width: '90%',
 	height: 5,
-	borderBottomEndRadius: 10
-  },
-  ovf: {
-	// @ts-expect-error
-	overflowX: 'visible'
+	borderBottomStartRadius: 6,
+	borderBottomEndRadius: 6
   }
 });
 
@@ -233,30 +234,27 @@ const unfoldedStyling = StyleSheet.create({
 		position: 'absolute',
 		flexDirection: 'column',
 		bottom: 65,
+		width: '100%',
+		maxWidth: 360,
+		minWidth: 350,
+		left: '50%',
+		//@ts-expect-error
+		transform: [{translateX: '-50%'}]
 	},
+
+	scrollContainer: {
+		marginTop: 8
+	},
+
 	scroll: {
 		position: 'relative',
 		paddingTop: 10,
 		flexDirection: 'column',
-		justifyContent: 'space-evenly',
-		alignItems: 'center',
-		minWidth: '1%',
-		overflowX: 'visible',
-		overflowY: 'auto'
 	},
 	buttons: {
 		flexDirection: 'row',
 		alignSelf: 'flex-end',
 	},
-	icons: {
-		padding: 10,
-        backgroundColor: '#1C1C1E8F',
-		borderRadius: 4, 
-        backdropFilter: {blur: 28},
-	},
-	foldIcon: {
-		marginEnd: 10
-	}
 });
 
 export default ToastContainer;

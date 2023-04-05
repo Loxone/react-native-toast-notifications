@@ -345,7 +345,7 @@ const Toast: FC<ToastProps> = (props) => {
 };
 
 const styles = StyleSheet.create({
-  container: { alignItems: "center", overflow: 'visible', alignSelf: 'center' },
+  container: { alignItems: "center", overflow: 'visible', alignSelf: 'stretch' },
   toastContainer: {
     paddingHorizontal: 12,
     paddingVertical: 12,
