@@ -26,6 +26,7 @@ interface State {
     toastsHistory: Array<ToastProps>;
     unfolded: boolean;
     unfoldedWidth: number;
+    visible: boolean;
 }
 
 class ToastContainer extends Component<Props, State> {
@@ -35,7 +36,8 @@ class ToastContainer extends Component<Props, State> {
             foldedToast: this.dummyToast,
             toastsHistory: [],
             unfolded: false,
-            unfoldedWidth: 0
+            unfoldedWidth: 0,
+            visible: true
         };
     }
 
@@ -45,7 +47,7 @@ class ToastContainer extends Component<Props, State> {
             this.setState({ unfolded: false }); 
         }
     }
-  
+
     // Placeholder toast 
         dummyToast = {
         id: 'dummy',
@@ -61,6 +63,14 @@ class ToastContainer extends Component<Props, State> {
         swipeEnabled: true,
     };
 
+    /**
+     * Toggles toast container visibility
+     * @params show: boolean
+     * @returns 
+     */
+    toggle = (show: boolean) => {
+        this.setState({ visible: show });
+    } 
     /**
      * Shows a new toast
      * @param message: string | JSX.Element
@@ -100,7 +110,7 @@ class ToastContainer extends Component<Props, State> {
             }
             });
             return id;
-      };
+    };
 
     renderUnfolded = () => {
         this.setState({
@@ -229,7 +239,7 @@ class ToastContainer extends Component<Props, State> {
     render() {
         return (
             <>
-                {this.state.unfolded ? this.unfoldedView() : this.renderBottomToasts()}
+                {this.state.visible ? (this.state.unfolded ? this.unfoldedView() : this.renderBottomToasts()) : null}
             </>
         );
     }
