@@ -346,7 +346,12 @@ const Toast: FC<ToastProps> = (props) => {
 };
 
 const styles = StyleSheet.create({
-    container: { alignItems: "center", overflow: 'visible', alignSelf: 'stretch' },
+    container: { 
+        alignItems: "center", 
+        overflow: 'visible', 
+        alignSelf: 'stretch' 
+    },
+
     toastContainer: {
         paddingHorizontal: 12,
         paddingVertical: 12,
@@ -356,10 +361,12 @@ const styles = StyleSheet.create({
         alignItems: "center",
         overflow: "visible",
     },
+
     message: {
         color: "#fff",
         fontWeight: "500",
     },
+    
     iconContainer: {
         marginRight: 5,
     },

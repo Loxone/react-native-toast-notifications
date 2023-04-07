@@ -79,9 +79,13 @@ class ToastContainer extends Component<Props, State> {
      */
     show = (message: string | JSX.Element, toastOptions?: ToastOptions) => {
         let id = toastOptions?.id || Math.random().toString();
+        // Function invoked on swipe dismiss or button dismiss
         const onDestroy = () => {
             toastOptions?.onClose && toastOptions?.onClose();
-            if(this.state.foldedToast.id === id) return this.setState({ foldedToast: this.dummyToast})
+            // Conditionaly update state to avoid unnecessary operations
+            if(this.state.foldedToast.id === id) {
+                return this.setState({ foldedToast: this.dummyToast});
+            }
             this.setState({ toastsHistory: this.state.toastsHistory.filter((t) => t.id !== id) });
         };
 
@@ -96,8 +100,11 @@ class ToastContainer extends Component<Props, State> {
         }
 
         requestAnimationFrame(() => {
-            if(this.state.foldedToast === this.dummyToast) this.setState({ foldedToast: newToast }); 
-            else {
+            // If foldedToast is dummy, replace it with the newToast
+            if(this.state.foldedToast === this.dummyToast) {
+                this.setState({ foldedToast: newToast });
+            } else {
+                // Otherwise, push current toast to the top of history and then replace newToast as folded
                 this.setState(
                     {
                         toastsHistory: [
@@ -112,7 +119,7 @@ class ToastContainer extends Component<Props, State> {
             return id;
     };
 
-    renderUnfolded = () => {
+    switchUnfoldedState = () => {
         this.setState({
             unfolded: !this.state.unfolded
         });
@@ -130,20 +137,23 @@ class ToastContainer extends Component<Props, State> {
         message: string | JSX.Element,
         toastOptions?: ToastOptions
     ) => {
-        let msg: string | JSX.Element;
-        let options: ToastOptions;
         if(this.state.foldedToast.id === id) {
-            msg = message !== this.state.foldedToast.message && message !== null ? message : this.state.foldedToast.message;
-            options = toastOptions !== this.state.foldedToast && toastOptions !== null ? {...this.state.foldedToast, ...toastOptions} : {...this.state.foldedToast};
-            debugger;
-            this.setState({ foldedToast: {...this.state.foldedToast, ...options, message: msg} });
+            // if expression false then keep original, else set new message
+            // if message undefined, expression false (undefined !== null = true but message = undefined makes expression false)
+            message = message && message !== this.state.foldedToast.message && message !== null ? message : this.state.foldedToast.message;
+            toastOptions = toastOptions && toastOptions !== this.state.foldedToast && toastOptions !== null ? {...this.state.foldedToast, ...toastOptions} : {...this.state.foldedToast};
+            this.setState({ 
+                foldedToast: {...this.state.foldedToast, ...toastOptions, message} 
+            });
         }
         else {
             let foundToast = this.state.toastsHistory.find((t) => t.id === id);
             // @ts-expect-error
-            msg = message !== undefined ? message : foundToast.message;
-            options = toastOptions ? {...foundToast, ...toastOptions} : {...foundToast}
-            this.setState({ toastsHistory: this.state.toastsHistory.map((t) => t.id === id ? {...t, message: msg, ...options} : t) });
+            message = message && message !== null ? message : foundToast.message;
+            toastOptions = toastOptions ? {...foundToast, ...toastOptions} : {...foundToast}
+            this.setState({ 
+                toastsHistory: this.state.toastsHistory.map((t) => t.id === id ? {...t, ...toastOptions, message} : t) 
+            });
         };
     };
 
@@ -154,8 +164,13 @@ class ToastContainer extends Component<Props, State> {
      * 
      */
     getNotificationById = (id: string) => {
-        if(this.state.foldedToast.id === id) return this.state.foldedToast;
-        if(this.state.toastsHistory.length > 0) return this.state.toastsHistory.find((toast) => toast.id === id);
+        if(this.state.foldedToast.id === id) {
+            return this.state.foldedToast;
+        }
+
+        if(this.state.toastsHistory.length > 0) {
+            return this.state.toastsHistory.find((toast) => toast.id === id);
+        }
         return;
     }
 
@@ -187,11 +202,14 @@ class ToastContainer extends Component<Props, State> {
      * @returns boolean
      */
     isOpen = (id: string) => {
-        if(this.state.foldedToast.id === id && this.state.foldedToast.open) return true;
-        else return this.state.toastsHistory.some((t) => t.id === id && t.open);
+        if(this.state.foldedToast.id === id && this.state.foldedToast.open) {
+            return true;
+        } else {
+            return this.state.toastsHistory.some((t) => t.id === id && t.open);
+        }
     }
 
-    renderBottomToasts() {
+    renderToast() {
         const { foldedToast, toastsHistory } = this.state;
         let { offset, offsetBottom } = this.props;
         let style: ViewStyle = {
@@ -204,7 +222,7 @@ class ToastContainer extends Component<Props, State> {
         if (foldedToast !== this.dummyToast || toastsHistory.length > 0) {
             const toast = foldedToast !== this.dummyToast ? foldedToast : toastsHistory.length > 0 ? toastsHistory[0] : this.dummyToast;
             // @ts-expect-error
-            const onPress = toastsHistory.length > 0 && foldedToast !== this.dummyToast ? () => this.renderUnfolded() : toast.onPress ? toast.onPress : undefined;
+            const onPress = toastsHistory.length > 0 && foldedToast !== this.dummyToast ? () => this.switchUnfoldedState() : toast.onPress ? toast.onPress : undefined;
             const type = toastsHistory.length > 0 && foldedToast !== this.dummyToast ? 'multiple' : undefined;
 
             return (
@@ -219,19 +237,22 @@ class ToastContainer extends Component<Props, State> {
         } else return null;
     }
 
+    toastHistoryExists: boolean = this.state.toastsHistory.length > 0;
+    foldedToastExists: boolean = this.state.foldedToast !== this.dummyToast;
+
     unfoldedView = () => {
-        let shouldRender = this.state.foldedToast !== this.dummyToast || this.state.toastsHistory.length > 0;
+        let shouldRender = this.foldedToastExists || this.toastHistoryExists;
         return shouldRender && 
         <KeyboardAvoidingView 
-            style={unfoldedStyling.container}
+            style={unfoldedStyles.container}
         >	
-            <View style={unfoldedStyling.buttons}>
-                <Pressable onPress={() => this.renderUnfolded()} >{ this.props.foldIcon }</Pressable>
+            <View style={unfoldedStyles.buttons}>
+                <Pressable onPress={() => this.switchUnfoldedState()} >{ this.props.foldIcon }</Pressable>
                 <Pressable onPress={() => this.hideAll()} >{ this.props.clearIcon }</Pressable>
             </View>
-            <ScrollView contentContainerStyle={unfoldedStyling.scroll} style={unfoldedStyling.scrollContainer}>
-                {this.state.foldedToast != this.dummyToast && <Toast key={this.state.foldedToast.id} {...this.state.foldedToast} type='closeable' />}
-                {this.state.toastsHistory.length > 0 && this.state.toastsHistory.map((t) => <Toast key={t.id} {...t} type='closeable' />)}
+            <ScrollView contentContainerStyle={unfoldedStyles.scroll} style={unfoldedStyles.scrollContainer}>
+                {this.foldedToastExists && <Toast key={this.state.foldedToast.id} {...this.state.foldedToast} type='closeable' />}
+                {this.toastHistoryExists && this.state.toastsHistory.map((t) => <Toast key={t.id} {...t} type='closeable' />)}
             </ScrollView>
         </KeyboardAvoidingView>
     }
@@ -239,7 +260,7 @@ class ToastContainer extends Component<Props, State> {
     render() {
         return (
             <>
-                {this.state.visible ? (this.state.unfolded ? this.unfoldedView() : this.renderBottomToasts()) : null}
+                {this.state.visible ? (this.state.unfolded ? this.unfoldedView() : this.renderToast()) : null}
             </>
         );
     }
@@ -276,7 +297,7 @@ const styles = StyleSheet.create({
     }
 });
 
-const unfoldedStyling = StyleSheet.create({
+const unfoldedStyles = StyleSheet.create({
     container: {
         flex: 0,
         zIndex: 999999,
