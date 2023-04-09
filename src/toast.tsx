@@ -243,6 +243,8 @@ const Toast: FC<ToastProps> = (props) => {
         return panResponderAnimRef.current;
     };
 
+    // This is unnecesary in current implementation since it uses type: prop on toast which are not used by us
+    // Not removing in case we want to use that in the future 
     if (icon === undefined) {
         switch (type) {
             case "success": {
@@ -266,7 +268,7 @@ const Toast: FC<ToastProps> = (props) => {
             }
         }
     }
-
+    // This is related to the comment above
     let backgroundColor = "";
     switch (type) {
         case "success":
