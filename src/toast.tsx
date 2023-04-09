@@ -266,7 +266,11 @@ const Toast: FC<ToastProps> = (props) => {
             }
         }
     }
-
+    /**
+     * Both snippets regarding icon and background color are related to built-in types of toasts
+     * In current use case only, type normal is reimplemented to suit our design without specyfying type explicitly
+     * on toast.show(), otherwise these are not used but not removed if ever needed 
+     */
     let backgroundColor = "";
     switch (type) {
         case "success":
@@ -346,7 +350,12 @@ const Toast: FC<ToastProps> = (props) => {
 };
 
 const styles = StyleSheet.create({
-    container: { alignItems: "center", overflow: 'visible', alignSelf: 'stretch' },
+    container: { 
+        alignItems: "center", 
+        overflow: 'visible', 
+        alignSelf: 'stretch' 
+    },
+
     toastContainer: {
         paddingHorizontal: 12,
         paddingVertical: 12,
@@ -356,10 +365,12 @@ const styles = StyleSheet.create({
         alignItems: "center",
         overflow: "visible",
     },
+
     message: {
         color: "#fff",
         fontWeight: "500",
     },
+
     iconContainer: {
         marginRight: 5,
     },
