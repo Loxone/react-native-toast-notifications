@@ -79,6 +79,7 @@ class ToastContainer extends Component<Props, State> {
      */
     show = (message: string | JSX.Element, toastOptions?: ToastOptions) => {
         let id = toastOptions?.id || Math.random().toString();
+        // Function invoked on swipe dismiss or button dismiss
         const onDestroy = () => {
             /**
              * With toast.show() besides onPress we can pass onClose which is a function that will trigger on dismissal if passed
@@ -247,6 +248,9 @@ class ToastContainer extends Component<Props, State> {
             );
         } else return null;
     }
+
+    toastHistoryExists: boolean = this.state.toastsHistory.length > 0;
+    foldedToastExists: boolean = this.state.foldedToast !== this.dummyToast;
 
     unfoldedView = () => {
         let shouldRender = this.foldedToastExsists() || this.toastHistoryExsists();
