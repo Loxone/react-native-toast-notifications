@@ -249,9 +249,6 @@ class ToastContainer extends Component<Props, State> {
         } else return null;
     }
 
-    toastHistoryExists: boolean = this.state.toastsHistory.length > 0;
-    foldedToastExists: boolean = this.state.foldedToast !== this.dummyToast;
-
     unfoldedView = () => {
         let shouldRender = this.foldedToastExsists() || this.toastHistoryExsists();
         return shouldRender && 
