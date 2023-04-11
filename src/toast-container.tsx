@@ -155,13 +155,10 @@ class ToastContainer extends Component<Props, State> {
         }
         else {
             let foundToast = this.state.toastsHistory.find((t) => t.id === id);
-            if(typeof foundToast === undefined) {
-                return;
-            } else {
+            if(foundToast) {
+                message = message && message !== foundToast?.message ? message : foundToast?.message;
                 // @ts-expect-error
-                message = message && message !== foundToast?.message && message !== null ? message : foundToast?.message;
-                // @ts-expect-error
-                toastOptions = toastOptions !== foundToast && toastOptions !== null ? {...foundToast, toastOptions} : {...foundToast}
+                toastOptions = toastOptions && toastOptions !== foundToast ? {...foundToast, toastOptions} : {...foundToast}
                 this.setState({ toastsHistory: this.state.toastsHistory.map((t) => t.id === id ? {...t, ...toastOptions, message} : t) });
             }
         };
@@ -219,7 +216,9 @@ class ToastContainer extends Component<Props, State> {
         if(this.state.foldedToast.id === id && this.state.foldedToast.open) {
             return true;
         }
-        else return this.state.toastsHistory.some((t) => t.id === id && t.open);
+        else {
+            return this.state.toastsHistory.some((t) => t.id === id && t.open);
+        }
     }
 
     renderToast() {
@@ -246,7 +245,9 @@ class ToastContainer extends Component<Props, State> {
                     <Toast key={toast.id} {...toast} onPress={onPress} type={type} />
                 </KeyboardAvoidingView>
             );
-        } else return null;
+        } else {
+            return null;
+        }
     }
 
     unfoldedView = () => {
