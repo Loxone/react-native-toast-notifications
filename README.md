@@ -26,6 +26,17 @@ Open a Terminal in the project root and run:
 yarn add react-native-toast-notifications
 ```
 
+## Modifications
+
+Open a Terminal in the project root and run:
+
+```sh
+./prepare.sh
+```
+The script will take care of required dependencies and will track saves so no manual recompilation is required :D
+
+On every modification, kerberos dev server has to be stopped, package has to be re-added with "yarn add <package_location>" and "yarn serve:dev" has to be invoked to recompile the entire thing, modify wisely!
+
 ## Usage
 
 Wrap your app in the `ToastProvider`, which provides context for the Toast hook.
