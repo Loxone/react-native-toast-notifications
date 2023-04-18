@@ -81,6 +81,26 @@ toast.show("Task finished successfully", {
 });
 ```
 
+### show() the Loxone way
+
+```js
+toast.show("<MESSAGE>", {
+  duration: number ?? null // Null will never disappear has to be either swiped/tapped or closed with the button,
+  offset: number //from the bottom of the screen in px,
+  animationType: "slide-in | zoom-in",
+  onPress: Function,
+  onClose: Function // executed after notification is closed and animation has ended,
+  data: {
+    title: string,
+    time: string // fed through prettyPrintTime(),
+    silent: boolean // will display just as connection notification disregarding other props,
+    originMAC: string // required for proper handling of MS switching,
+    originUUID: string // same as above
+    originMSName: string // if not provided and MS is switched "REMOTE" will be printed instead    
+  }
+});
+```
+
 ### update()
 
 ```js
