@@ -39,8 +39,8 @@ class ToastContainer extends Component<Props, State> {
         };
     }
 
-    foldedToastExsists = () => this.state.foldedToast !== this.dummyToast;
-    toastHistoryExsists = () => this.state.toastsHistory.length > 0;
+    foldedToastExsists = () => {return this.state.foldedToast.id !== this.dummyToast.id};
+    toastHistoryExsists = () => {return this.state.toastsHistory.length > 0};
     componentDidUpdate(): void {
         // Without this unfolded view with remain oppened empty showing only buttons
         if (this.state.foldedToast === this.dummyToast && this.state.toastsHistory.length === 0 && this.state.unfolded) {
@@ -122,9 +122,9 @@ class ToastContainer extends Component<Props, State> {
             return id;
     };
 
-    setUnfolded = () => {
+    setUnfolded = (mode: boolean) => {
         this.setState({
-            unfolded: !this.state.unfolded
+            unfolded: mode
         });
     }
 
@@ -222,6 +222,15 @@ class ToastContainer extends Component<Props, State> {
     }
 
     renderToast() {
+        // Single toast with props
+        // const toast = this.foldedToastExsists() ? this.state.foldedToast : this.toastHistoryExsists() ? this.state.toastsHistory[0] : return null;
+        let toast;
+        if (this.foldedToastExsists()) {
+            toast = this.state.foldedToast 
+        } else if (this.toastHistoryExsists()) {
+            toast = this.state.toastsHistory[0];
+        } else return null;
+
         let { offset, offsetBottom } = this.props;
         let style: ViewStyle = {
             bottom: offsetBottom || offset,
@@ -229,25 +238,18 @@ class ToastContainer extends Component<Props, State> {
             flexDirection: "column",
         };
 
-        // Single toast with props
-        if (this.foldedToastExsists() || this.toastHistoryExsists()) {
-            const toast = this.foldedToastExsists() ? this.state.foldedToast : this.toastHistoryExsists() ? this.state.toastsHistory[0] : this.dummyToast;
-            // @ts-expect-error
-            const onPress = this.foldedToastExsists() && this.toastHistoryExsists() ? () => this.setUnfolded() : toast.onPress ? toast.onPress : undefined;
-            const type = this.foldedToastExsists() && this.toastHistoryExsists() ? 'multiple' : undefined;
+        const onPress = (this.foldedToastExsists() && this.toastHistoryExsists() || this.state.toastsHistory.length > 1) ? () => this.setUnfolded(true) : toast?.onPress;
+        const type = (this.foldedToastExsists() && this.toastHistoryExsists() || this.state.toastsHistory.length > 1) && !toast.data?.silent ? 'multiple' : undefined;
 
-            return (
-                <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "position" : undefined}
-                pointerEvents="box-none"
-                style={[styles.container, style]}
-                >
-                    <Toast key={toast.id} {...toast} onPress={onPress} type={type} />
-                </KeyboardAvoidingView>
-            );
-        } else {
-            return null;
-        }
+        return (
+            <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "position" : undefined}
+            pointerEvents="box-none"
+            style={[styles.container, style]}
+            >
+                <Toast key={toast.id} {...toast} onPress={onPress} type={type} />
+            </KeyboardAvoidingView>
+        );
     }
 
     unfoldedView = () => {
@@ -257,7 +259,7 @@ class ToastContainer extends Component<Props, State> {
             style={unfoldedStyles.container}
         >	
             <View style={unfoldedStyles.buttons}>
-                <Pressable onPress={() => this.setUnfolded()} >{ this.props.foldIcon }</Pressable>
+                <Pressable onPress={() => this.setUnfolded(false)} >{ this.props.foldIcon }</Pressable>
                 <Pressable onPress={() => this.hideAll()} >{ this.props.clearIcon }</Pressable>
             </View>
             <ScrollView contentContainerStyle={unfoldedStyles.scroll} style={unfoldedStyles.scrollContainer}>
