@@ -254,7 +254,8 @@ class ToastContainer extends Component<Props, State> {
 
     unfoldedView = () => {
         let shouldRender = this.foldedToastExsists() || this.toastHistoryExsists();
-        return shouldRender && 
+        return shouldRender && <>
+        <View style={unfoldedStyles.backgroundDim} />
         <KeyboardAvoidingView 
             style={unfoldedStyles.container}
         >	
@@ -266,7 +267,7 @@ class ToastContainer extends Component<Props, State> {
                 {this.foldedToastExsists() && <Toast key={this.state.foldedToast.id} {...this.state.foldedToast} type='closeable' />}
                 {this.toastHistoryExsists() && this.state.toastsHistory.map((t) => <Toast key={t.id} {...t} type='closeable' />)}
             </ScrollView>
-        </KeyboardAvoidingView>
+        </KeyboardAvoidingView></>
     }
 
     render() {
@@ -318,11 +319,18 @@ const unfoldedStyles = StyleSheet.create({
         flexDirection: 'column',
         bottom: 65,
         width: '100%',
-        maxWidth: 360,
-        minWidth: 350,
         left: '50%',
         //@ts-expect-error
         transform: [{translateX: '-50%'}]
+    },
+
+    backgroundDim: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(0, 0, 0, .5)',
     },
 
     scrollContainer: {
@@ -336,7 +344,10 @@ const unfoldedStyles = StyleSheet.create({
     },
     buttons: {
         flexDirection: 'row',
-        alignSelf: 'flex-end',
+        alignSelf: 'center',
+        justifyContent: 'flex-end',
+        maxWidth: 358,
+        width: '100%'
     },
 });
 
