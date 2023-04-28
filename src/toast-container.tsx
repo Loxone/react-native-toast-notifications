@@ -35,7 +35,7 @@ class ToastContainer extends Component<Props, State> {
             foldedToast: this.dummyToast,
             toastsHistory: [],
             unfolded: false,
-            visible: true
+            visible: true,
         };
     }
 
@@ -240,6 +240,7 @@ class ToastContainer extends Component<Props, State> {
 
         const onPress = (this.foldedToastExsists() && this.toastHistoryExsists() || this.state.toastsHistory.length > 1) ? () => this.setUnfolded(true) : toast?.onPress;
         const type = (this.foldedToastExsists() && this.toastHistoryExsists() || this.state.toastsHistory.length > 1) && !toast.data?.silent ? 'multiple' : undefined;
+        const swipeable = type === 'multiple' ? false : true;
 
         return (
             <KeyboardAvoidingView
@@ -247,15 +248,16 @@ class ToastContainer extends Component<Props, State> {
             pointerEvents="box-none"
             style={[styles.container, style]}
             >
-                <Toast key={toast.id} {...toast} onPress={onPress} type={type} />
+                <Toast key={toast.id} {...toast} onPress={onPress} type={type} swipeEnabled={swipeable} />
             </KeyboardAvoidingView>
         );
     }
 
     unfoldedView = () => {
         let shouldRender = this.foldedToastExsists() || this.toastHistoryExsists();
+        
         return shouldRender && <>
-        <View style={unfoldedStyles.backgroundDim} />
+        <Pressable onPress={() => this.setUnfolded(false)} style={unfoldedStyles.backgroundDim} />
         <KeyboardAvoidingView 
             style={unfoldedStyles.container}
         >	
@@ -263,7 +265,11 @@ class ToastContainer extends Component<Props, State> {
                 <Pressable onPress={() => this.setUnfolded(false)} >{ this.props.foldIcon }</Pressable>
                 <Pressable onPress={() => this.hideAll()} >{ this.props.clearIcon }</Pressable>
             </View>
-            <ScrollView contentContainerStyle={unfoldedStyles.scroll} style={unfoldedStyles.scrollContainer}>
+            <ScrollView 
+                contentContainerStyle={unfoldedStyles.scroll} 
+                style={unfoldedStyles.scrollContainer}
+                directionalLockEnabled={true}
+            >
                 {this.foldedToastExsists() && <Toast key={this.state.foldedToast.id} {...this.state.foldedToast} type='closeable' />}
                 {this.toastHistoryExsists() && this.state.toastsHistory.map((t) => <Toast key={t.id} {...t} type='closeable' />)}
             </ScrollView>
@@ -300,14 +306,6 @@ const styles = StyleSheet.create({
     message: {
         color: "white",
     },
-
-    fake: {
-        position: 'absolute',
-        width: '90%',
-        height: 5,
-        borderBottomStartRadius: 6,
-        borderBottomEndRadius: 6
-    }
 });
 
 const unfoldedStyles = StyleSheet.create({
@@ -317,8 +315,10 @@ const unfoldedStyles = StyleSheet.create({
         maxHeight: "50%",
         position: 'absolute',
         flexDirection: 'column',
+        alignItems: 'center',
         bottom: 65,
         width: '100%',
+        maxWidth: 360,
         left: '50%',
         //@ts-expect-error
         transform: [{translateX: '-50%'}]
@@ -334,7 +334,8 @@ const unfoldedStyles = StyleSheet.create({
     },
 
     scrollContainer: {
-        marginTop: 8
+        marginTop: 8,
+        width: '100%',
     },
 
     scroll: {

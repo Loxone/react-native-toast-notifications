@@ -221,6 +221,12 @@ const Toast: FC<ToastProps> = (props) => {
                     y: gestureState.dy,
                 });
             },
+            onPanResponderTerminate: () => {
+                Animated.spring(getPanResponderAnim(), {
+                    toValue: { x: 0, y: 0 },
+                    useNativeDriver: Platform.OS !== "web",
+                }).start();
+            },
             onPanResponderRelease: (_, gestureState) => {
                 if (gestureState.dx > 50) {
                     panReleaseToRight(gestureState);
