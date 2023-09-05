@@ -6,16 +6,15 @@ import {
     Platform,
     View,
     Pressable,
-    ScrollView
+    ScrollView,
+    Animated
 } from "react-native";
 import Toast, { ToastOptions, ToastProps } from "./toast";
 
 export interface Props extends ToastOptions {
     renderToast?(toast: ToastProps): JSX.Element;
     renderType?: { [type: string]: (toast: ToastProps) => JSX.Element };
-    offset?: number;
-    offsetTop?: number;
-    offsetBottom?: number;
+    offsetBottom: number;
     swipeEnabled?: boolean;
     foldIcon?: JSX.Element;
     clearIcon?: JSX.Element;
@@ -26,6 +25,7 @@ interface State {
     toastsHistory: Array<ToastProps>;
     unfolded: boolean;
     visible: boolean;
+    animatedOffset: Animated.Value;
 }
 
 class ToastContainer extends Component<Props, State> {
@@ -35,17 +35,25 @@ class ToastContainer extends Component<Props, State> {
             foldedToast: this.dummyToast,
             toastsHistory: [],
             unfolded: false,
-            visible: true
+            visible: true,
+            animatedOffset: new Animated.Value(props.offsetBottom)
         };
     }
 
     foldedToastExsists = () => {return this.state.foldedToast.id !== this.dummyToast.id};
     toastHistoryExsists = () => {return this.state.toastsHistory.length > 0};
-    componentDidUpdate(): void {
+    componentDidUpdate(prevProps: Props): void {
         // Without this unfolded view with remain oppened empty showing only buttons
         if (this.state.foldedToast === this.dummyToast && this.state.toastsHistory.length === 0 && this.state.unfolded) {
             this.setState({ unfolded: false }); 
         }
+
+        if(prevProps !== this.props) {
+            Animated.spring(this.state.animatedOffset, {
+                toValue: this.props.offsetBottom!,
+                useNativeDriver: true,
+            }).start();
+        }        
     }
 
     // Placeholder toast 
@@ -59,7 +67,7 @@ class ToastContainer extends Component<Props, State> {
 
     static defaultProps: Props = {
         placement: "bottom",
-        offset: 10,
+        offsetBottom: 10,
         swipeEnabled: true,
     };
 
@@ -187,6 +195,7 @@ class ToastContainer extends Component<Props, State> {
      * @returns void
      */
     hide = (id: string) => {
+        this.setState({ animatedOffset: new Animated.Value(this.props.offsetBottom) });
         if(this.state.foldedToast.id === id) {
             return this.setState({ foldedToast: {...this.state.foldedToast, open: false}});
         }
@@ -231,31 +240,37 @@ class ToastContainer extends Component<Props, State> {
             toast = this.state.toastsHistory[0];
         } else return null;
 
-        let { offset, offsetBottom } = this.props;
         let style: ViewStyle = {
-            bottom: offsetBottom || offset,
             justifyContent: "flex-end",
             flexDirection: "column",
         };
 
+        let animatedOffsetStyle: Animated.WithAnimatedObject<ViewStyle> = {
+            bottom: this.state.animatedOffset
+        }
+
         const onPress = (this.foldedToastExsists() && this.toastHistoryExsists() || this.state.toastsHistory.length > 1) ? () => this.setUnfolded(true) : toast?.onPress;
         const type = (this.foldedToastExsists() && this.toastHistoryExsists() || this.state.toastsHistory.length > 1) && !toast.data?.silent ? 'multiple' : undefined;
+        const swipeable = type === 'multiple' ? false : true;
 
         return (
-            <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "position" : undefined}
-            pointerEvents="box-none"
-            style={[styles.container, style]}
-            >
-                <Toast key={toast.id} {...toast} onPress={onPress} type={type} />
-            </KeyboardAvoidingView>
+            <Animated.View style={[styles.container, animatedOffsetStyle]}>
+                <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "position" : undefined}
+                pointerEvents="box-none"
+                style={style}
+                >
+                    <Toast key={toast.id} {...toast} onPress={onPress} type={type} swipeEnabled={swipeable} />
+                </KeyboardAvoidingView>
+            </Animated.View>
         );
     }
 
     unfoldedView = () => {
         let shouldRender = this.foldedToastExsists() || this.toastHistoryExsists();
+        
         return shouldRender && <>
-        <View style={unfoldedStyles.backgroundDim} />
+        <Pressable onPress={() => this.setUnfolded(false)} style={unfoldedStyles.backgroundDim} />
         <KeyboardAvoidingView 
             style={unfoldedStyles.container}
         >	
@@ -263,7 +278,11 @@ class ToastContainer extends Component<Props, State> {
                 <Pressable onPress={() => this.setUnfolded(false)} >{ this.props.foldIcon }</Pressable>
                 <Pressable onPress={() => this.hideAll()} >{ this.props.clearIcon }</Pressable>
             </View>
-            <ScrollView contentContainerStyle={unfoldedStyles.scroll} style={unfoldedStyles.scrollContainer}>
+            <ScrollView 
+                contentContainerStyle={unfoldedStyles.scroll} 
+                style={unfoldedStyles.scrollContainer}
+                directionalLockEnabled={true}
+            >
                 {this.foldedToastExsists() && <Toast key={this.state.foldedToast.id} {...this.state.foldedToast} type='closeable' />}
                 {this.toastHistoryExsists() && this.state.toastsHistory.map((t) => <Toast key={t.id} {...t} type='closeable' />)}
             </ScrollView>
@@ -300,14 +319,6 @@ const styles = StyleSheet.create({
     message: {
         color: "white",
     },
-
-    fake: {
-        position: 'absolute',
-        width: '90%',
-        height: 5,
-        borderBottomStartRadius: 6,
-        borderBottomEndRadius: 6
-    }
 });
 
 const unfoldedStyles = StyleSheet.create({
@@ -317,8 +328,10 @@ const unfoldedStyles = StyleSheet.create({
         maxHeight: "50%",
         position: 'absolute',
         flexDirection: 'column',
+        alignItems: 'center',
         bottom: 65,
         width: '100%',
+        maxWidth: 360,
         left: '50%',
         //@ts-expect-error
         transform: [{translateX: '-50%'}]
@@ -334,7 +347,8 @@ const unfoldedStyles = StyleSheet.create({
     },
 
     scrollContainer: {
-        marginTop: 8
+        marginTop: 8,
+        width: '100%',
     },
 
     scroll: {
