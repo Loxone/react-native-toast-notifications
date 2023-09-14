@@ -26,6 +26,17 @@ Open a Terminal in the project root and run:
 yarn add react-native-toast-notifications
 ```
 
+## Modifications
+
+Open a Terminal in the project root and run:
+
+```sh
+./prepare.sh
+```
+The script will take care of required dependencies and will track saves so no manual recompilation is required :D
+
+On every modification, kerberos dev server has to be stopped, package has to be re-added with "yarn add <package_location>" and "yarn serve:dev" has to be invoked to recompile the entire thing, modify wisely!
+
 ## Usage
 
 Wrap your app in the `ToastProvider`, which provides context for the Toast hook.
@@ -67,6 +78,26 @@ toast.show("Task finished successfully", {
   duration: 4000,
   offset: 30,
   animationType: "slide-in | zoom-in",
+});
+```
+
+### show() the Loxone way
+
+```js
+toast.show("<MESSAGE>", {
+  duration: number ?? null // Null will never disappear has to be either swiped/tapped or closed with the button,
+  offset: number //from the bottom of the screen in px,
+  animationType: "slide-in | zoom-in",
+  onPress: Function,
+  onClose: Function // executed after notification is closed and animation has ended,
+  data: {
+    title: string,
+    time: string // fed through prettyPrintTime(),
+    silent: boolean // will display just as connection notification disregarding other props,
+    originMAC: string // required for proper handling of MS switching,
+    originUUID: string // same as above
+    originMSName: string // if not provided and MS is switched "REMOTE" will be printed instead    
+  }
 });
 ```
 
