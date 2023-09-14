@@ -76,7 +76,7 @@ class ToastContainer extends Component<Props, State> {
      * Shows a new toast. Returns id
      */
     show = (message: string | JSX.Element, toastOptions?: ToastOptions) => {
-        let id = toastOptions?.id || Math.random().toString();
+        const id = toastOptions?.id || Math.random().toString();
         const onDestroy = () => {
             toastOptions?.onClose && toastOptions?.onClose();
             this.setState({
@@ -150,8 +150,8 @@ class ToastContainer extends Component<Props, State> {
 
     renderToast() {
         const { toasts } = this.state;
-        let { offsetBottom } = this.props;
-        let style: ViewStyle = {
+        const { offsetBottom } = this.props;
+        const style: ViewStyle = {
             bottom: offsetBottom,
             width: width,
             justifyContent: 'flex-end',
@@ -188,14 +188,14 @@ class ToastContainer extends Component<Props, State> {
 
     renderUnfolded() {
         const { toasts } = this.state;
-        let { offsetBottom } = this.props;
-        let style: ViewStyle = {
+        const { offsetBottom } = this.props;
+        const style: ViewStyle = {
             bottom: offsetBottom,
             width: width,
             justifyContent: 'flex-end',
             flexDirection: 'column',
         };
-        let buttonStyle: ViewStyle = {
+        const buttonStyle: ViewStyle = {
             padding: 10,
             backgroundColor: '#1C1C1E',
             borderRadius: 4,
