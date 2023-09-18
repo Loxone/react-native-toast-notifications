@@ -8,10 +8,11 @@ import {
     SafeAreaView,
     Pressable,
     Text,
+    ScrollView,
 } from 'react-native';
 import Toast, { ToastOptions, ToastProps } from './toast';
 
-const { width } = Dimensions.get('window');
+const { height, width } = Dimensions.get('window');
 
 export interface Props extends ToastOptions {
     renderToast?(toast: ToastProps): JSX.Element;
@@ -237,25 +238,35 @@ class ToastContainer extends Component<Props, State> {
                         </Pressable>
                     </SafeAreaView>
                     <SafeAreaView>
-                        {toasts.map((toast, index) => {
-                            return (
-                                <Toast
-                                    key={toast.id}
-                                    {...toast}
-                                    style={{
-                                        ...(toast.style as object),
-                                        marginBottom:
-                                            index < toasts.length - 1 ? 4 : 0,
-                                    }}
-                                />
-                            );
-                        })}
+                        <ScrollView
+                            style={{
+                                flex: 1,
+                                maxHeight: height / 2,
+                            }}
+                            showsHorizontalScrollIndicator={false}
+                        >
+                            {toasts.map((toast, index) => {
+                                return (
+                                    <Toast
+                                        key={toast.id}
+                                        {...toast}
+                                        style={{
+                                            ...(toast.style as object),
+                                            marginBottom:
+                                                index < toasts.length - 1
+                                                    ? 4
+                                                    : 0,
+                                        }}
+                                    />
+                                );
+                            })}
+                        </ScrollView>
                     </SafeAreaView>
                 </KeyboardAvoidingView>
                 <Pressable
                     style={{
-                        height: '100vh',
-                        width: '100vw',
+                        height,
+                        width,
                         position: 'absolute',
                         backgroundColor: '#000000CC',
                     }}
