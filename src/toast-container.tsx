@@ -8,14 +8,17 @@ import {
     SafeAreaView,
     Pressable,
     Text,
+    ScrollView,
 } from 'react-native';
 import Toast, { ToastOptions, ToastProps } from './toast';
 
-const { width } = Dimensions.get('window');
+const { height, width } = Dimensions.get('window');
 
 export interface Props extends ToastOptions {
     renderToast?(toast: ToastProps): JSX.Element;
     renderType?: { [type: string]: (toast: ToastProps) => JSX.Element };
+    offset?: number;
+    offsetTop?: number;
     offsetBottom?: number;
     swipeEnabled?: boolean;
 }
@@ -62,6 +65,7 @@ class ToastContainer extends Component<Props, State> {
                 Please provide an Icon to ToastProvider's foldIcon prop
             </Text>
         ),
+        type: 'normal',
     };
 
     componentDidUpdate(): void {
@@ -148,15 +152,16 @@ class ToastContainer extends Component<Props, State> {
         return this.state.toasts.some((t) => t.id === id && t.open);
     };
 
-    renderToast() {
+    renderBottomToast() {
         const { toasts } = this.state;
-        const { offsetBottom } = this.props;
-        const style: ViewStyle = {
-            bottom: offsetBottom,
+        let { offset, offsetBottom } = this.props;
+        let style: ViewStyle = {
+            bottom: offsetBottom || offset,
             width: width,
             justifyContent: 'flex-end',
             flexDirection: 'column',
         };
+        const bottomToasts = toasts.filter((t) => t.placement === 'bottom');
         return (
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'position' : undefined}
@@ -164,10 +169,10 @@ class ToastContainer extends Component<Props, State> {
                 pointerEvents="box-none"
             >
                 <SafeAreaView>
-                    {toasts.length > 1 ? (
+                    {bottomToasts.length > 1 ? (
                         <Toast
-                            key={toasts[0].id}
-                            {...toasts[0]}
+                            key={bottomToasts[0].id}
+                            {...bottomToasts[0]}
                             type="multiple"
                             swipeEnabled={false}
                             onPress={() => {
@@ -177,10 +182,39 @@ class ToastContainer extends Component<Props, State> {
                             }}
                         />
                     ) : (
-                        toasts.length > 0 && (
-                            <Toast key={toasts[0].id} {...toasts[0]} />
+                        bottomToasts.length > 0 && (
+                            <Toast
+                                key={bottomToasts[0].id}
+                                {...bottomToasts[0]}
+                            />
                         )
                     )}
+                </SafeAreaView>
+            </KeyboardAvoidingView>
+        );
+    }
+
+    renderTopToast() {
+        const { toasts } = this.state;
+        let { offset, offsetTop } = this.props;
+        let style: ViewStyle = {
+            top: offsetTop || offset,
+            width: width,
+            justifyContent: 'flex-start',
+            flexDirection: 'column-reverse',
+        };
+        return (
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'position' : undefined}
+                style={[styles.container, style]}
+                pointerEvents="box-none"
+            >
+                <SafeAreaView>
+                    {toasts
+                        .filter((t) => t.placement === 'top')
+                        .map((toast) => (
+                            <Toast key={toast.id} {...toast} />
+                        ))}
                 </SafeAreaView>
             </KeyboardAvoidingView>
         );
@@ -237,25 +271,37 @@ class ToastContainer extends Component<Props, State> {
                         </Pressable>
                     </SafeAreaView>
                     <SafeAreaView>
-                        {toasts.map((toast, index) => {
-                            return (
-                                <Toast
-                                    key={toast.id}
-                                    {...toast}
-                                    style={{
-                                        ...(toast.style as object),
-                                        marginBottom:
-                                            index < toasts.length - 1 ? 4 : 0,
-                                    }}
-                                />
-                            );
-                        })}
+                        <ScrollView
+                            contentContainerStyle={{
+                                flex: 1,
+                                maxHeight: height / 2,
+                            }}
+                            showsHorizontalScrollIndicator={false}
+                            hitSlop={{ top: 10, bottom: 10 }}
+                            canCancelContentTouches={true}
+                        >
+                            {toasts.filter(toast => toast.type === 'normal').map((toast, index) => {
+                                return (
+                                    <Toast
+                                        key={toast.id}
+                                        {...toast}
+                                        style={{
+                                            ...(toast.style as object),
+                                            marginBottom:
+                                                index < toasts.length - 1
+                                                    ? 4
+                                                    : 0,
+                                        }}
+                                    />
+                                );
+                            })}
+                        </ScrollView>
                     </SafeAreaView>
                 </KeyboardAvoidingView>
                 <Pressable
                     style={{
-                        height: '100vh',
-                        width: '100vw',
+                        height,
+                        width,
                         position: 'absolute',
                         backgroundColor: '#000000CC',
                     }}
@@ -272,9 +318,10 @@ class ToastContainer extends Component<Props, State> {
     render() {
         return (
             <>
+                {this.renderTopToast()}
                 {this.state.isUnfolded
                     ? this.renderUnfolded()
-                    : this.renderToast()}
+                    : this.renderBottomToast()}
             </>
         );
     }

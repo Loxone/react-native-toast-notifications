@@ -29,12 +29,12 @@ export interface ToastOptions {
     /**
      * Icon used in unfolded view to dismiss the view
      */
-    foldIcon: JSX.Element;
+    foldIcon?: JSX.Element;
 
     /**
      * Icon used in folded view to dissmiss all toasts
      */
-    dismissIcon: JSX.Element;
+    dismissIcon?: JSX.Element;
 
     /**
      * Toast types, You can implement your custom types with JSX using renderType method on ToastContainer.
