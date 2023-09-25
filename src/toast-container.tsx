@@ -26,7 +26,7 @@ export interface Props extends ToastOptions {
 interface State {
     toasts: Array<ToastProps>;
     isUnfolded: boolean;
-    areEnabled: boolean;
+    isVisible: boolean;
 }
 
 class ToastContainer extends Component<Props, State> {
@@ -35,7 +35,7 @@ class ToastContainer extends Component<Props, State> {
         this.state = {
             toasts: [],
             isUnfolded: false,
-            areEnabled: true,
+            isVisible: true,
         };
     }
 
@@ -154,9 +154,9 @@ class ToastContainer extends Component<Props, State> {
         return this.state.toasts.some((t) => t.id === id && t.open);
     };
 
-    toggle = (state?: boolean) => {
+    toggleToastVisibility = (isVisible: boolean = !this.state.isVisible) => {
         this.setState({
-            areEnabled: state ?? !this.state.areEnabled,
+            isVisible,
         });
     };
 
@@ -327,7 +327,7 @@ class ToastContainer extends Component<Props, State> {
 
     render() {
         return (
-            this.state.areEnabled && (
+            this.state.isVisible && (
                 <>
                     {this.renderTopToast()}
                     {this.state.isUnfolded
