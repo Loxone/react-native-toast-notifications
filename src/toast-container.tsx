@@ -26,6 +26,7 @@ export interface Props extends ToastOptions {
 interface State {
     toasts: Array<ToastProps>;
     isUnfolded: boolean;
+    isVisible: boolean;
 }
 
 class ToastContainer extends Component<Props, State> {
@@ -34,6 +35,7 @@ class ToastContainer extends Component<Props, State> {
         this.state = {
             toasts: [],
             isUnfolded: false,
+            isVisible: true,
         };
     }
 
@@ -150,6 +152,12 @@ class ToastContainer extends Component<Props, State> {
      */
     isOpen = (id: string) => {
         return this.state.toasts.some((t) => t.id === id && t.open);
+    };
+
+    toggleToastVisibility = (isVisible: boolean = !this.state.isVisible) => {
+        this.setState({
+            isVisible,
+        });
     };
 
     renderBottomToast() {
@@ -280,21 +288,23 @@ class ToastContainer extends Component<Props, State> {
                             hitSlop={{ top: 10, bottom: 10 }}
                             canCancelContentTouches={true}
                         >
-                            {toasts.filter(toast => toast.type === 'normal').map((toast, index) => {
-                                return (
-                                    <Toast
-                                        key={toast.id}
-                                        {...toast}
-                                        style={{
-                                            ...(toast.style as object),
-                                            marginBottom:
-                                                index < toasts.length - 1
-                                                    ? 4
-                                                    : 0,
-                                        }}
-                                    />
-                                );
-                            })}
+                            {toasts
+                                .filter((toast) => toast.type === 'normal')
+                                .map((toast, index) => {
+                                    return (
+                                        <Toast
+                                            key={toast.id}
+                                            {...toast}
+                                            style={{
+                                                ...(toast.style as object),
+                                                marginBottom:
+                                                    index < toasts.length - 1
+                                                        ? 4
+                                                        : 0,
+                                            }}
+                                        />
+                                    );
+                                })}
                         </ScrollView>
                     </SafeAreaView>
                 </KeyboardAvoidingView>
@@ -317,12 +327,14 @@ class ToastContainer extends Component<Props, State> {
 
     render() {
         return (
-            <>
-                {this.renderTopToast()}
-                {this.state.isUnfolded
-                    ? this.renderUnfolded()
-                    : this.renderBottomToast()}
-            </>
+            this.state.isVisible && (
+                <>
+                    {this.renderTopToast()}
+                    {this.state.isUnfolded
+                        ? this.renderUnfolded()
+                        : this.renderBottomToast()}
+                </>
+            )
         );
     }
 }
