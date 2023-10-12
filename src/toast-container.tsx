@@ -77,7 +77,6 @@ class ToastContainer extends Component<Props, State> {
                 isUnfolded: false,
             });
         }
-        console.log('toast ammount', this.state.toasts.length);
     }
 
     /**
