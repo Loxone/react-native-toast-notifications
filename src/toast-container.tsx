@@ -9,6 +9,7 @@ import {
     Pressable,
     Text,
     ScrollView,
+    View,
 } from 'react-native';
 import Toast, { ToastOptions, ToastProps } from './toast';
 
@@ -141,10 +142,11 @@ class ToastContainer extends Component<Props, State> {
     /**
      * Removes all toasts in stack
      */
-    hideAll = () => {
+    hideAll = (finished?: () => void) => {
         this.setState({
             toasts: this.state.toasts.map((t) => ({ ...t, open: false })),
         });
+        finished?.();
     };
 
     /**
@@ -168,6 +170,7 @@ class ToastContainer extends Component<Props, State> {
             width: width,
             justifyContent: 'flex-end',
             flexDirection: 'column',
+            paddingHorizontal: 4,
         };
         const bottomToasts = toasts.filter((t) => t.placement === 'bottom');
         return (
@@ -240,7 +243,6 @@ class ToastContainer extends Component<Props, State> {
         const buttonStyle: ViewStyle = {
             padding: 10,
             backgroundColor: '#1C1C1E',
-            borderRadius: 4,
         };
         return (
             <>
@@ -271,22 +273,21 @@ class ToastContainer extends Component<Props, State> {
                         </Pressable>
                         <Pressable
                             onPress={() => {
-                                this.hideAll();
+                                this.hideAll(() =>
+                                    this.setState({
+                                        isUnfolded: false,
+                                    }),
+                                );
                             }}
                             style={buttonStyle}
                         >
                             {this.props.dismissIcon}
                         </Pressable>
                     </SafeAreaView>
-                    <SafeAreaView>
+                    <View style={{ flex: 1, maxHeight: height / 2 }}>
                         <ScrollView
-                            contentContainerStyle={{
-                                flex: 1,
-                                maxHeight: height / 2,
-                            }}
-                            showsHorizontalScrollIndicator={false}
-                            hitSlop={{ top: 10, bottom: 10 }}
-                            canCancelContentTouches={true}
+                            showsVerticalScrollIndicator={false}
+                            nestedScrollEnabled={false}
                         >
                             {toasts
                                 .filter((toast) => toast.type === 'normal')
@@ -306,7 +307,7 @@ class ToastContainer extends Component<Props, State> {
                                     );
                                 })}
                         </ScrollView>
-                    </SafeAreaView>
+                    </View>
                 </KeyboardAvoidingView>
                 <Pressable
                     style={{
