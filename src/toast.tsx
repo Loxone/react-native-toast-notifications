@@ -129,6 +129,7 @@ export interface ToastProps extends ToastOptions {
     onDestroy(): void;
     message: string | JSX.Element;
     open: boolean;
+    currentSNR?: string;
     renderToast?(toast: ToastProps): JSX.Element;
     renderType?: { [type: string]: (toast: ToastProps) => JSX.Element };
     onHide(): void;
