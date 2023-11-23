@@ -19,6 +19,7 @@ export interface Props extends ToastOptions {
     renderToast?(toast: ToastProps): JSX.Element;
     renderType?: { [type: string]: (toast: ToastProps) => JSX.Element };
     offset?: number;
+    currentSNR: string;
     offsetTop?: number;
     offsetBottom?: number;
     swipeEnabled?: boolean;
@@ -28,6 +29,7 @@ interface State {
     toasts: Array<ToastProps>;
     isUnfolded: boolean;
     isVisible: boolean;
+    currentSNR: string;
 }
 
 class ToastContainer extends Component<Props, State> {
@@ -37,6 +39,7 @@ class ToastContainer extends Component<Props, State> {
             toasts: [],
             isUnfolded: false,
             isVisible: true,
+            currentSNR: '',
         };
     }
 
@@ -44,6 +47,7 @@ class ToastContainer extends Component<Props, State> {
         placement: 'bottom',
         offsetBottom: 10,
         swipeEnabled: true,
+        currentSNR: '',
         dismissIcon: (
             <Text
                 style={{
@@ -77,6 +81,17 @@ class ToastContainer extends Component<Props, State> {
                 isUnfolded: false,
             });
         }
+        if (this.props.currentSNR !== this.state.currentSNR) {
+            this.setState({
+                currentSNR: this.props.currentSNR,
+                toasts: this.state.toasts.map((t) => {
+                    return {
+                        ...t,
+                        currentSNR: this.props.currentSNR,
+                    };
+                }),
+            });
+        }
     }
 
     /**
@@ -101,6 +116,7 @@ class ToastContainer extends Component<Props, State> {
                         open: true,
                         onHide: () => this.hide(id),
                         ...this.props,
+                        currentSNR: this.props.currentSNR,
                         ...toastOptions,
                     },
                     ...this.state.toasts.filter((t) => t.open),
