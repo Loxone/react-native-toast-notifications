@@ -10,10 +10,10 @@ import {
     Text,
     ScrollView,
     View,
+    ScaledSize,
 } from 'react-native';
 import Toast, { ToastOptions, ToastProps } from './toast';
 
-const { height, width } = Dimensions.get('window');
 
 export interface Props extends ToastOptions {
     renderToast?(toast: ToastProps): JSX.Element;
@@ -30,6 +30,7 @@ interface State {
     isUnfolded: boolean;
     isVisible: boolean;
     currentSNR: string;
+    windowDimensions: ScaledSize
 }
 
 class ToastContainer extends Component<Props, State> {
@@ -40,6 +41,7 @@ class ToastContainer extends Component<Props, State> {
             isUnfolded: false,
             isVisible: true,
             currentSNR: '',
+            windowDimensions: Dimensions.get('window')
         };
     }
 
@@ -74,6 +76,18 @@ class ToastContainer extends Component<Props, State> {
         ),
         type: 'normal',
     };
+
+    componentDidMount() {
+        Dimensions.addEventListener('change', this.onDimensionChange);
+    }
+
+    componentWillUnmount() {
+        Dimensions.removeEventListener('change', this.onDimensionChange);
+    }
+
+    onDimensionChange(dim: {window: ScaledSize, screen: ScaledSize}) {
+        this.setState({ windowDimensions: dim.window });
+    }
 
     componentDidUpdate(): void {
         if (this.state.toasts.length <= 1 && this.state.isUnfolded) {
@@ -183,7 +197,7 @@ class ToastContainer extends Component<Props, State> {
         let { offset, offsetBottom } = this.props;
         let style: ViewStyle = {
             bottom: offsetBottom || offset,
-            width: width,
+            width: this.state.windowDimensions.width,
             justifyContent: 'flex-end',
             flexDirection: 'column',
             paddingHorizontal: 4,
@@ -226,7 +240,7 @@ class ToastContainer extends Component<Props, State> {
         let { offset, offsetTop } = this.props;
         let style: ViewStyle = {
             top: offsetTop || offset,
-            width: width,
+            width: this.state.windowDimensions.width,
             justifyContent: 'flex-start',
             flexDirection: 'column-reverse',
         };
@@ -252,7 +266,7 @@ class ToastContainer extends Component<Props, State> {
         const { offsetBottom } = this.props;
         const style: ViewStyle = {
             bottom: offsetBottom,
-            width: width,
+            width: this.state.windowDimensions.width,
             justifyContent: 'flex-end',
             flexDirection: 'column',
         };
@@ -300,7 +314,7 @@ class ToastContainer extends Component<Props, State> {
                             {this.props.dismissIcon}
                         </Pressable>
                     </SafeAreaView>
-                    <View style={{ flex: 1, maxHeight: height / 2 }}>
+                    <View style={{ flex: 1, maxHeight: this.state.windowDimensions.height / 2 }}>
                         <ScrollView
                             showsVerticalScrollIndicator={false}
                             nestedScrollEnabled={false}
@@ -327,8 +341,8 @@ class ToastContainer extends Component<Props, State> {
                 </KeyboardAvoidingView>
                 <Pressable
                     style={{
-                        height,
-                        width,
+                        height: this.state.windowDimensions.height,
+                        width: this.state.windowDimensions.width,
                         position: 'absolute',
                         backgroundColor: '#000000CC',
                     }}
