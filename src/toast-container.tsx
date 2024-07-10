@@ -34,8 +34,11 @@ interface State {
 }
 
 class ToastContainer extends Component<Props, State> {
+
+    _boundOnDimensionChange: (dim: {window: ScaledSize, screen: ScaledSize}) => void;
     constructor(props: Props) {
         super(props);
+        this._boundOnDimensionChange = this.onDimensionChange.bind(this)
         this.state = {
             toasts: [],
             isUnfolded: false,
@@ -78,11 +81,11 @@ class ToastContainer extends Component<Props, State> {
     };
 
     componentDidMount() {
-        Dimensions.addEventListener('change', this.onDimensionChange);
+        Dimensions.addEventListener('change', this._boundOnDimensionChange);
     }
 
     componentWillUnmount() {
-        Dimensions.removeEventListener('change', this.onDimensionChange);
+        Dimensions.removeEventListener('change', this._boundOnDimensionChange);
     }
 
     onDimensionChange(dim: {window: ScaledSize, screen: ScaledSize}) {
